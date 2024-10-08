@@ -1,13 +1,14 @@
 import GetAccount from "../../application/usecase/account/GetAccount";
 import Signup from "../../application/usecase/account/Signup";
+import { inject } from "../di/Registry";
 import HttpServer from "../http/HttpServer";
 
-export default class API {
-  constructor(
-    readonly httpServer: HttpServer,
-    readonly signup: Signup,
-    readonly getAccount: GetAccount
-  ) {}
+export default class AccountController {
+  @inject("signup")
+  signup?: Signup;
+  @inject("getAccount")
+  getAccount?: GetAccount;
+  constructor(readonly httpServer: HttpServer) {}
 
   build() {
     this.httpServer.register(
@@ -15,7 +16,7 @@ export default class API {
       "/signup",
       async (params: any, body: any) => {
         const input = body;
-        const output = await this.signup.execute(input);
+        const output = await this.signup?.execute(input);
         return output;
       }
     );
@@ -25,7 +26,7 @@ export default class API {
       "/accounts/:accountId",
       async (params: any, body: any) => {
         const accountId = params.accountId;
-        const output = await this.getAccount.execute(accountId);
+        const output = await this.getAccount?.execute(accountId);
         return output;
       }
     );

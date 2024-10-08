@@ -20,6 +20,7 @@ export default class GetAccount implements UseCase {
       carPlate: account.getCarPlate(),
       isPassenger: account.isPassenger,
       isDriver: account.isDriver,
+      password: account.getPassword(),
     };
   }
 }
@@ -32,4 +33,5 @@ type Output = {
   carPlate: string;
   isPassenger: boolean;
   isDriver: boolean;
+  password: string;
 };

@@ -71,7 +71,7 @@ test("Deve aceitar uma corrida", async () => {
   expect(outputGetRide.driverId).toBe(outputSignupDriver.accountId);
 });
 
-test.only("Não deve aceitar uma corrida se o motorista já tiver outra corrida", async () => {
+test("Não deve aceitar uma corrida se o motorista já tiver outra corrida", async () => {
   const inputSignupPassenger = {
     email: `johndoe${Math.random()}@gmail.com`,
     name: "John Doe",

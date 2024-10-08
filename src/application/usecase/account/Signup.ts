@@ -1,52 +1,47 @@
+import MailerGatewayFake from "../../../infra/gateway/MailerGatewayFake";
+import UseCase from "../UseCase";
 import Account from "../../../domain/entity/Account";
 import MailerGateway from "../../gateway/MailerGateway";
-import UseCase from "../UseCase";
 import AccountRepository from "../../repository/AccountRepository";
 
 export default class Signup implements UseCase {
-  accountRepositoryDatabase: AccountRepository;
-  mailerGateway: MailerGateway;
+	accountRepository: AccountRepository;
+	mailerGateway: MailerGateway;
 
-  constructor(
-    accountRepositoryDatabase: AccountRepository,
-    mailerGateway: MailerGateway
-  ) {
-    this.accountRepositoryDatabase = accountRepositoryDatabase;
-    this.mailerGateway = mailerGateway;
-  }
+	// Dependency Injection que viabilizou o princípio de design Dependency Inversion (DIP)
+	constructor (accountRepository: AccountRepository, mailerGateway: MailerGateway = new MailerGatewayFake()) {
+		this.accountRepository = accountRepository;
+		this.mailerGateway = mailerGateway;
+	}
 
-  async execute(input: Input): Promise<Output> {
-    const account = Account.create(
-      input.name,
-      input.email,
-      input.carPlate || "",
-      !!input.isPassenger,
-      !!input.isDriver,
-      input.cpf
-    );
+	// Dependency Injection
+	setAccountRepository (accountRepository: AccountRepository) {
+		this.accountRepository = accountRepository;
+	}
 
-    const existingAccount =
-      await this.accountRepositoryDatabase.getAccountByEmail(input.email);
-
-    if (existingAccount) throw new Error("Account already exists");
-
-    await this.accountRepositoryDatabase.saveAccount(account);
-    this.mailerGateway.send(account.getEmail(), "Welcome", "");
-
-    return { accountId: account.accountId };
-  }
+	async execute (input: Input): Promise<Output> {
+		const existingAccount = await this.accountRepository.getAccountByEmail(input.email);
+		if (existingAccount) throw new Error("Account already exists");
+		const account = Account.create(input.name, input.email, input.cpf, input.carPlate || "", !!input.isPassenger, !!input.isDriver, input.password);
+		await this.accountRepository.saveAccount(account);
+		await this.mailerGateway.send(account.getEmail(), "Welcome!", "");
+		return {
+			accountId: account.accountId
+		};
+	}
+	
 }
 
-// DTOs
 type Input = {
-  name: string;
-  email: string;
-  cpf: string;
-  carPlate?: string;
-  isPassenger?: boolean;
-  isDriver?: boolean;
-};
+	name: string,
+	email: string,
+	cpf: string,
+	carPlate?: string,
+	isPassenger?: boolean,
+	isDriver?: boolean,
+	password?: string
+}
 
 type Output = {
-  accountId: string;
-};
+	accountId: string
+}

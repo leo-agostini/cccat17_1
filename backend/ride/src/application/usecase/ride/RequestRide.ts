@@ -1,4 +1,5 @@
 import Ride from "../../../domain/entity/Ride";
+import { RabbitMQAdapter } from "../../../infra/queue/Queue";
 import AccountGateway from "../../gateway/AccountGateway";
 import RideRepository from "../../repository/RideRepository";
 import UseCase from "../UseCase";
@@ -35,7 +36,10 @@ export default class RequestRide implements UseCase {
     );
 
     await this.rideRepository.saveRide(ride);
-
+    const queue = new RabbitMQAdapter()
+    await queue.connect()
+    await queue.setup("rideRequested", "")
+    await queue.publish("rideRequested", { rideId: ride.rideId, passengerName: account.name })
     return {
       rideId: ride.rideId,
     };

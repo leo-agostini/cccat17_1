@@ -21,3 +21,14 @@ test("Deve criar uma conta de passageiro", async () => {
   expect(outputGetAccount.email).toBe(input.email);
   expect(outputGetAccount.cpf).toBe(input.cpf);
 });
+
+test.only("Deve criar uma conta de passageiro pela api async", async () => {
+  const input = {
+    email: `johndoe${Math.random()}@gmail.com`,
+    name: "John Doe",
+    cpf: "97456321558",
+    isPassenger: true,
+  };
+
+  await axios.post("http://localhost:3001/signup_async", input);
+});

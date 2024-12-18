@@ -2,22 +2,32 @@ import GetAccount from "../../application/usecase/account/GetAccount";
 import Signup from "../../application/usecase/account/Signup";
 import { inject } from "../di/Registry";
 import HttpServer from "../http/HttpServer";
+import Queue from "../queue/Queue";
 
 export default class AccountController {
   @inject("signup")
-  signup?: Signup;
+  signup!: Signup;
   @inject("getAccount")
-  getAccount?: GetAccount;
-  constructor(readonly httpServer: HttpServer) {}
-
-  build() {
+  getAccount!: GetAccount;
+  @inject("queue")
+  queue!: Queue
+  constructor(readonly httpServer: HttpServer) {
     this.httpServer.register(
       "post",
       "/signup",
-      async (params: any, body: any) => {
+      async (_: any, body: any) => {
         const input = body;
         const output = await this.signup?.execute(input);
         return output;
+      }
+    );
+    
+    this.httpServer.register(
+      "post",
+      "/signup_async",
+      async (_: any, body: any) => {
+        const input = body;
+        await this.queue.publish("signup", input)
       }
     );
 
@@ -30,5 +40,9 @@ export default class AccountController {
         return output;
       }
     );
+
+
+
   }
 }
+

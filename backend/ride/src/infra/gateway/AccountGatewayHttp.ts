@@ -1,4 +1,3 @@
-import axios from "axios";
 import AccountGateway from "../../application/gateway/AccountGateway";
 import HttpClient from "../http/HttpClient";
 

@@ -6,17 +6,26 @@ import MailerGatewayFake from "./infra/gateway/MailerGatewayFake";
 import GetAccount from "./application/usecase/account/GetAccount";
 import AccountController from "./infra/controller/AccountController";
 import Registry from "./infra/di/Registry";
+import { RabbitMQAdapter } from "./infra/queue/Queue";
+import QueueController from "./infra/controller/QueueController";
 
-const connection = new PgPromiseAdapter();
-const accountRepository = new AccountRepositoryDatabase(connection);
-const mailerGateway = new MailerGatewayFake();
-const signup = new Signup(accountRepository, mailerGateway);
-const getAccount = new GetAccount(accountRepository);
-const httpServer = new ExpressAdapter();
-const accountController = new AccountController(httpServer);
+(async () => {
+  const connection = new PgPromiseAdapter();
+  const accountRepository = new AccountRepositoryDatabase(connection);
+  const mailerGateway = new MailerGatewayFake();
+  const signup = new Signup(accountRepository, mailerGateway);
+  const getAccount = new GetAccount(accountRepository);
+  const httpServer = new ExpressAdapter();
+  const queue = new RabbitMQAdapter();
+  await queue.connect()
+  await queue.setup("signup", "signup")
+  
+  Registry.getInstance().provide("signup", signup);
+  Registry.getInstance().provide("queue", queue);
+  Registry.getInstance().provide("getAccount", getAccount);
+  
+  new QueueController();
+  new AccountController(httpServer);
 
-Registry.getInstance().provide("signup", signup);
-Registry.getInstance().provide("getAccount", getAccount);
-
-accountController.build();
-httpServer.listen(3001);
+  httpServer.listen(3001);
+})();

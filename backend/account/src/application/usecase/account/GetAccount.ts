@@ -9,9 +9,11 @@ export default class GetAccount implements UseCase {
   }
 
   async execute(accountId: string): Promise<Output> {
+    console.log(accountId)
     const account = await this.accountRepositoryDatabase.getAccountById(
       accountId
     );
+
     return {
       accountId: account.accountId,
       name: account.getName(),

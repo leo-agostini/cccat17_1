@@ -18,6 +18,7 @@ export default class GetRide implements UseCase {
     const lastPosition =
       await this.positionRepository.getLastPositionFromRideId(rideId);
 
+    console.log(ride.driverId)
     return {
       date: ride.date,
       driverId: ride.driverId,

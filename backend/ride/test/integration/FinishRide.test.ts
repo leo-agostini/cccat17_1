@@ -1,4 +1,5 @@
 import AccountGateway from "../../src/application/gateway/AccountGateway";
+import PaymentGateway from "../../src/application/gateway/PaymentGateway";
 import AcceptRide from "../../src/application/usecase/ride/AcceptRide";
 import FinishRide from "../../src/application/usecase/ride/FinishRide";
 import GetRide from "../../src/application/usecase/ride/GetRide";
@@ -9,7 +10,9 @@ import DatabaseConnection, {
   PgPromiseAdapter,
 } from "../../src/infra/database/DatabaseConnection";
 import AccountGatewayHttp from "../../src/infra/gateway/AccountGatewayHttp";
+import PaymentGatewayHttp from "../../src/infra/gateway/PaymentGatewayHttp";
 import { AxiosAdapter } from "../../src/infra/http/HttpClient";
+import Queue, { RabbitMQAdapter } from "../../src/infra/queue/Queue";
 import PositionRepositoryDatabase from "../../src/infra/repository/PositionRepositoryDatabase";
 import RideRepositoryDatabase from "../../src/infra/repository/RideRepositoryDatabase";
 
@@ -21,24 +24,30 @@ let startRide: StartRide;
 let updatePosition: UpdatePosition;
 let accountGateway: AccountGateway;
 let finishRide: FinishRide;
+let paymentGateway: PaymentGateway;
+let queue: Queue;
 
 
-beforeEach(() => {
+beforeEach(async () => {
   connection = new PgPromiseAdapter();
   const rideRepository = new RideRepositoryDatabase(connection);
   const positionRepository = new PositionRepositoryDatabase(connection);
   const axiosAdapter = new AxiosAdapter();
+  queue = new RabbitMQAdapter();
+  queue.connect()
   accountGateway = new AccountGatewayHttp(axiosAdapter);
   requestRide = new RequestRide(rideRepository, accountGateway);
   getRide = new GetRide(rideRepository, positionRepository, accountGateway);
   acceptRide = new AcceptRide(rideRepository, accountGateway);
   startRide = new StartRide(rideRepository);
   updatePosition = new UpdatePosition(rideRepository, positionRepository);
-  finishRide = new FinishRide(rideRepository);
+  paymentGateway = new PaymentGatewayHttp(axiosAdapter)
+  finishRide = new FinishRide(rideRepository, paymentGateway, queue);
 });
 
 afterEach(async () => {
   await connection.close();
+  await queue?.disconnect();
 });
 
 test("Deve finalizar uma corrida", async function () {
@@ -94,4 +103,5 @@ test("Deve finalizar uma corrida", async function () {
 	await finishRide.execute(inputFinishRide);
 	const outputGetRide = await getRide.execute(outputRequestRide.rideId);
 	expect(outputGetRide.status).toBe("completed");
+	console.log(outputGetRide)
 });
